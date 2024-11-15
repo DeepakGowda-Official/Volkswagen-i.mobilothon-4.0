@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EmotiDrive</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body>
+    <div class="container">
+        <h1>Welcome to EmotiDrive!</h1>
+        <p id="intro-text">How are you feeling today? Speak to me, and I will help you out!</p>
+
+        <div id="chat-box" class="chat-box">
+        </div>
+    </div>
+
+    <footer>
+        <p>Made with ❤️ by EmotiDrive</p>
+    </footer>
+
+
+    <script>
+        let recognition;
+        let synth = window.speechSynthesis;
+        let isListening = false;
+        let isSpeaking = false;
+        let waitingForInput = false;
+
+        window.onload = function() {
+            speakGreeting();
+        };
+
+        function speakGreeting() {
+            let greeting = "Hi Alice! What's the plan for today, how are you feeling?";
+            let utterance = new SpeechSynthesisUtterance(greeting);
+            utterance.lang = 'en-US';
+            utterance.onstart = function() {
+                isSpeaking = true;
+            };
+            utterance.onend = function() {
+                isSpeaking = false;
+                initiateVoiceRecognition();
+            };
+            synth.speak(utterance);
+        }
+
+        function initiateVoiceRecognition() {
+            if (!waitingForInput) {
+                recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+                recognition.lang = 'en-US';
+                recognition.continuous = false;
+                recognition.interimResults = false;
+
+                recognition.onstart = function() {
+                    console.log("Voice recognition started.");
+                    waitingForInput = true;
+                };
+
+                recognition.onresult = function(event) {
+                    let userInput = event.results[0][0].transcript;
+                    displayUserMessage(userInput);
+                    analyzeEmotion(userInput);
+                    recognition.stop();
+                };
+
+                recognition.onerror = function(event) {
+                    console.log("Error: " + event.error);
+                    waitingForInput = false;
+                };
+
+                recognition.start();
+            }
+        }
+
+        function displayUserMessage(message) {
+            let chatBox = document.getElementById('chat-box');
+            let userMessage = document.createElement('div');
+            userMessage.classList.add('message', 'user-message');
+            userMessage.innerHTML = `<span>You: </span>${message}`;
+            chatBox.appendChild(userMessage);
+            chatBox.scrollTop = chatBox.scrollHeight;
+        }
+
+        function analyzeEmotion(userInput) {
+            fetch('/analyze_emotion', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded'
+                },
+                body: `user_input=${userInput}`
+            })
+            .then(response => response.json())
+            .then(data => {
+                displayBotMessage(data.response);
+                changeBackground(data.emotion);
+                speakResponse(data.response);
+            });
+        }
+
+        function displayBotMessage(response) {
+            let chatBox = document.getElementById('chat-box');
+            let botMessage = document.createElement('div');
+            botMessage.classList.add('message', 'bot-message');
+            botMessage.innerHTML = `<span>EmotiDrive: </span>${response}`;
+            chatBox.appendChild(botMessage);
+            chatBox.scrollTop = chatBox.scrollHeight;
+        }
+
+        function speakResponse(response) {
+            let utterance = new SpeechSynthesisUtterance(response);
+            utterance.lang = 'en-US';
+            utterance.onstart = function() {
+                isSpeaking = true;
+            };
+            utterance.onend = function() {
+                isSpeaking = false;
+                waitingForInput = false;
+                initiateVoiceRecognition();
+            };
+            synth.speak(utterance);
+        }
+
+        function changeBackground(emotion) {
+            let body = document.querySelector('body');
+            if (emotion === 'happy') {
+                body.classList.remove('frustrated-background', 'stressed-background','tired-background');
+                body.classList.add('happy-background');
+            } else if (emotion === 'stressed') {
+                body.classList.remove('happy-background', 'frustrated-background');
+                body.classList.add('stressed-background');
+            } else if (emotion === 'frustrated') {
+                body.classList.remove('happy-background', 'stressed-background');
+                body.classList.add('frustrated-background');
+            } else if (emotion === 'tired') {
+                body.classList.remove('happy-background', 'stressed-background');
+                body.classList.add('tired-background');
+            }
+        }
+    </script>
+</body>
+</html>
