@@ -11,7 +11,8 @@ responses = {
     "frustrated": ["I can tell you're frustrated. Would you like to stop for a quick break?", 
                    "Hmm, you seem upset. How about stopping by that breakfast place? People joke they serve dosas without batter! Did it calm you down"],
     "neutral": ["I hope you're having a smooth day! Anything specific you'd like to do?"],
-    "tired": ["Staying alert is important — I’ll help find a place to grab a coffee if you need one!"]
+    "tired": ["Staying alert is important — I’ll help find a place to grab a coffee if you need one!"],
+    "meeting":["Oh, I see! Starting the day strong – you've got this!"]
 }
 
 @app.route('/')
@@ -27,11 +28,12 @@ def analyze_emotion():
 
 def analyze_user_emotion(user_input):
     keywords = {
-        "happy": ["good", "great", "amazing", "excited", "joy", "yeah"],
+        "happy": ["good", "great", "amazing", "excited", "joy", "yeah","Thanks"],
         "stressed": ["stress", "busy", "overwhelmed", "rushed", "nervous"],
         "frustrated": ["frustrated", "angry", "upset", "irritated", "annoyed"],
         "neutral": ["okay", "fine", "alright", "normal"],
-        "tired": ["sleepy", "tired"]
+        "tired": ["sleepy", "tired"],
+        "meeting":["meeting","work"]
     }
     for emotion, words in keywords.items():
         if any(word in user_input.lower() for word in words):
